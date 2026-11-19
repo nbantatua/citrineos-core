@@ -1,0 +1,20 @@
+FROM node:24-bookworm-slim
+
+# Install RabbitMQ locally so Service 1 doesn't consume a second Northflank slot
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    rabbitmq-server \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && corepack enable
+
+WORKDIR /app
+COPY . .
+
+RUN pnpm install --frozen-lockfile
+RUN pnpm --filter @citrineos/ocpp-server... build
+
+COPY start-core.sh /usr/local/bin/start-core.sh
+RUN chmod +x /usr/local/bin/start-core.sh
+
+EXPOSE 8080 8081
+CMD ["/usr/local/bin/start-core.sh"]
